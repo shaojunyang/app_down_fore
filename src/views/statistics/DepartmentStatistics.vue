@@ -1,0 +1,503 @@
+<template>
+    <div class="app-container">
+        <div class="filter-container">
+            <el-input placeholder="输入公司名称" v-model="listQuery.keyword" style="width: 200px;"
+                      class="filter-item" @keyup.enter.native="handleFilter"/>
+            <!--</el-select>-->
+            <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">{{
+                $t('table.search') }}
+            </el-button>
+            <!--<el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit"-->
+            <!--@click="handleCreate">{{ $t('table.add') }}-->
+            <!--</el-button>-->
+            <el-button v-waves :loading="downloadLoading" class="filter-item" type="primary" icon="el-icon-download"
+                       @click="exportList">{{ $t('table.export') }}
+            </el-button>
+            <!--<el-checkbox v-model="showReviewer" class="filter-item" style="margin-left:15px;"-->
+            <!--@change="tableKey=tableKey+1">{{ $t('table.reviewer') }}-->
+            <!--</el-checkbox>-->
+        </div>
+
+        <el-table
+                v-loading="listLoading"
+                :key="tableKey"
+                :data="list"
+                border
+                fit
+                @sort-change="sortChange"
+                highlight-current-row
+                style="width: 100%;" :default-sort="{prop: 'date', order: 'descending'}"
+        >
+            <!--<el-table-column :label="$t('table.id')" prop="id" sortable="custom" align="center" width="65">-->
+            <!--<template slot-scope="scope">-->
+            <!--<span>{{ scope.row.id }}</span>-->
+            <!--</template>-->
+            <!--</el-table-column>-->
+
+            <el-table-column type="expand">
+                <template slot-scope="props">
+                    <el-table
+                            :key="tableKey"
+                            :data="props.row.listDepartment"
+                            border
+                            fit
+                            highlight-current-row
+                    >
+                        <el-table-column label="部门名称" prop="name" width="500px" align="center">
+                            <template slot-scope="scope">
+                                <span>{{ scope.row.departmentName }}</span>
+                            </template>
+                        </el-table-column>
+
+
+                        <el-table-column label="部门编号" prop="name" width="200px" align="center">
+                            <template slot-scope="scope">
+                                <span>{{ scope.row.departmentNo }}</span>
+                            </template>
+                        </el-table-column>
+
+                        <!--<el-table-column label="邮箱" prop="name" width="200px" align="center">-->
+                            <!--<template slot-scope="scope">-->
+                                <!--<span>{{ scope.row.email }}</span>-->
+                            <!--</template>-->
+                        <!--</el-table-column>-->
+
+                        <!--<el-table-column label="部门" prop="name" width="200px" align="center">-->
+                            <!--<template slot-scope="scope">-->
+
+                            <!--</template>-->
+                        <!--</el-table-column>-->
+
+                    </el-table>
+                </template>
+            </el-table-column>
+
+
+            <el-table-column align="center" label='编号' prop="id" width="200px" sortable>
+                <template slot-scope="scope">
+                    {{((listQuery.pageNum-1)*listQuery.pageSize)+scope.$index + 1}}
+                    <!--{{// scope.$index}}-->
+                </template>
+            </el-table-column>
+
+            <el-table-column :label="$t('公司名称')" prop="companyName" width="600px" align="center" sortable>
+                <template slot-scope="scope">
+                    <span>{{ scope.row.companyName }}</span>
+                </template>
+            </el-table-column>
+            <!--<el-table-column label="公司地址" prop="companyAddress" min-width="333px" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--&lt;!&ndash;<span class="link-type" @click="handleUpdate(scope.row)">{{ scope.row.companyAddress }}</span>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<el-tag>{{ scope.row.type | typeFilter }}</el-tag>&ndash;&gt;-->
+                    <!--<span>{{ scope.row.companyAddress }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column label="创建时间" prop="createTime" width="170px" align="center" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.createTime }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column label="创建时间"  prop="companyAddress" width="170px" align="center" sortable>-->
+            <!--<template slot-scope="scope">-->
+            <!--<span>{{ scope.row.createTime }}</span>-->
+            <!--</template>-->
+            <!--</el-table-column>-->
+
+            <!--<el-table-column label="联系人" prop="contactPersonName" width="170px" align="center" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.contactPersonName }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column label="联系人电话" prop="contactPhone" width="170px" align="center" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.contactPhone }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column label="联系人邮箱" prop="contactEmail" width="170px" align="center" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.contactEmail }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column label="登录次数" prop="loginCount" width="170px" align="center" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.loginCount }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column label="最后登录时间" prop="lastLoginDatetime" width="170px" align="center" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.lastLoginDatetime }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+
+            <!--<el-table-column label="是否签约" prop="isSign" width="170px" align="center" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.isSign }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column label="是否认证" prop="isAuth" width="170px" align="center" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.isAuth }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column label="税号" prop="regNum" width="170px" align="center" sortable>-->
+                <!--<template slot-scope="scope">-->
+                    <!--<span>{{ scope.row.regNum }}</span>-->
+                <!--</template>-->
+            <!--</el-table-column>-->
+
+
+            <!--<el-table-column label="操作" width="100" fixed="right">-->
+                <!--<template slot-scope="scope">-->
+
+
+                    <!--<el-button-->
+                            <!--type="primary" v-if="scope.row.enabled === 0" :loading="loading"-->
+                            <!--@click="startOrDisabled( scope.row,1)"-->
+                    <!--&gt;启用-->
+                    <!--</el-button>-->
+                    <!--<el-button-->
+                            <!--type="danger" v-else :loading="loading" @click="startOrDisabled( scope.row,0)">-->
+                        <!--禁用-->
+                    <!--</el-button>-->
+
+                <!--</template>-->
+            <!--</el-table-column>-->
+
+            <!--<el-table-column label="税号" width="170px" align="center" sortable>-->
+            <!--<template slot-scope="scope">-->
+            <!--<span>{{ scope.row.regNum }}</span>-->
+            <!--</template>-->
+            <!--</el-table-column>-->
+
+            <!--<el-table-column v-if="showReviewer" :label="$t('table.reviewer')" width="110px" align="center">-->
+            <!--<template slot-scope="scope">-->
+            <!--<span style="color:red;">{{ scope.row.reviewer }}</span>-->
+            <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column :label="$t('table.importance')" width="80px">-->
+            <!--<template slot-scope="scope">-->
+            <!--<svg-icon v-for="n in +scope.row.importance" :key="n" icon-class="star" class="meta-item__icon"/>-->
+            <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column :label="$t('table.readings')" align="center" width="95">-->
+            <!--<template slot-scope="scope">-->
+            <!--<span v-if="scope.row.pageviews" class="link-type" @click="handleFetchPv(scope.row.pageviews)">{{ scope.row.pageviews }}</span>-->
+            <!--<span v-else>0</span>-->
+            <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column :label="$t('table.status')" class-name="status-col" width="100">-->
+            <!--<template slot-scope="scope">-->
+            <!--<el-tag :type="scope.row.status | statusFilter">{{ scope.row.status }}</el-tag>-->
+            <!--</template>-->
+            <!--</el-table-column>-->
+            <!--<el-table-column :label="$t('table.actions')" align="center" width="230"-->
+            <!--class-name="small-padding fixed-width">-->
+            <!--<template slot-scope="scope">-->
+            <!--<el-button type="primary" size="mini" @click="handleUpdate(scope.row)">{{ $t('table.edit') }}-->
+            <!--</el-button>-->
+            <!--<el-button v-if="scope.row.status!='published'" size="mini" type="success"-->
+            <!--@click="handleModifyStatus(scope.row,'published')">{{ $t('table.publish') }}-->
+            <!--</el-button>-->
+            <!--<el-button v-if="scope.row.status!='draft'" size="mini"-->
+            <!--@click="handleModifyStatus(scope.row,'draft')">{{ $t('table.draft') }}-->
+            <!--</el-button>-->
+            <!--<el-button v-if="scope.row.status!='deleted'" size="mini" type="danger"-->
+            <!--@click="handleModifyStatus(scope.row,'deleted')">{{ $t('table.delete') }}-->
+            <!--</el-button>-->
+            <!--</template>-->
+            <!--</el-table-column>-->
+        </el-table>
+
+        <pagination v-show="total>0" :total="total" :page.sync="listQuery.pageNum" :limit.sync="listQuery.pageSize"
+                    @pagination="getList"/>
+
+
+    </div>
+</template>
+
+<script>
+
+
+    import {blobDownloadExcelFile, toLine} from "../../utils/constApi";
+    import {fetchList, fetchPv, createArticle, updateArticle, companyList} from '@/api/article'
+    import {downloadExcelFileApi, startOrDisabledApi} from "../../api/article";
+    import waves from '@/directive/waves' // Waves directive
+    import {parseTime} from '@/utils'
+    import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
+
+    const calendarTypeOptions = [
+        {key: 'CN', display_name: 'China'},
+        {key: 'US', display_name: 'USA'},
+        {key: 'JP', display_name: 'Japan'},
+        {key: 'EU', display_name: 'Eurozone'}
+    ]
+
+    // arr to obj ,such as { CN : "China", US : "USA" }
+    const calendarTypeKeyValue = calendarTypeOptions.reduce((acc, cur) => {
+        acc[cur.key] = cur.display_name
+        return acc
+    }, {})
+
+    export default {
+        name: 'Statistics',
+        components: {Pagination},
+        directives: {waves},
+        filters: {
+            statusFilter(status) {
+                const statusMap = {
+                    published: 'success',
+                    draft: 'info',
+                    deleted: 'danger'
+                }
+                return statusMap[status]
+            },
+            typeFilter(type) {
+                return calendarTypeKeyValue[type]
+            }
+        },
+        data() {
+            return {
+                tableKey: 0,
+                list: null,
+                total: 0,
+                loading: false,
+                listLoading: true,
+                listQuery: {
+                    pageSize: 10,
+                    pageNum: 1,
+                    // limit: 20,
+                    // importance: undefined,
+                    orderBy: "update_time-desc",
+                    keyword: undefined,
+                    // type: undefined,
+                    // sort: '+id'
+                },
+                importanceOptions: [1, 2, 3],
+                calendarTypeOptions,
+                sortOptions: [{label: 'ID Ascending', key: '+id'}, {label: 'ID Descending', key: '-id'}],
+                statusOptions: ['published', 'draft', 'deleted'],
+                showReviewer: false,
+                temp: {
+                    id: undefined,
+                    importance: 1,
+                    remark: '',
+                    timestamp: new Date(),
+                    title: '',
+                    type: '',
+                    status: 'published'
+                },
+                dialogFormVisible: false,
+                dialogStatus: '',
+                textMap: {
+                    update: 'Edit',
+                    create: 'Create'
+                },
+                dialogPvVisible: false,
+                pvData: [],
+                rules: {
+                    type: [{required: true, message: 'type is required', trigger: 'change'}],
+                    timestamp: [{type: 'date', required: true, message: 'timestamp is required', trigger: 'change'}],
+                    title: [{required: true, message: 'title is required', trigger: 'blur'}]
+                },
+                downloadLoading: false
+            }
+        },
+        created() {
+            this.getList()
+        },
+        methods: {
+            // 启用公司 或者禁用公司
+            startOrDisabled(row) {
+                this.loading = true
+                // 禁用公司或者启用公司
+                startOrDisabledApi({
+                    id: row.id
+                }).then(response => {
+                    console.log("response:", response);
+                    this.loading = false
+                    this.$message.success(response.data.msg)
+                    // 刷新
+                    this.getList()
+                })
+
+            },
+            getList() {
+                this.listLoading = true
+                companyList(this.listQuery).then(response => {
+                    console.log("response:", response);
+                    this.list = response.data.data.list
+                    this.total = response.data.data.total
+                    console.log("this.list:", this.list);
+                    console.log("this.total:", this.total);
+                    //
+                    // Just to simulate the time of the request
+                    // setTimeout(() => {
+                    this.listLoading = false
+                    // }, 1.5 * 1000)
+                })
+            },
+
+            exportList() {
+                // 创建链接。并触发下载
+                let href = "/api/back/export/export_all_company";
+                // trigerDownloadFile(href);
+                downloadExcelFileApi(href).then(res => {
+                    const fileName = "部门列表_" + new Date().getTime().toString() + ".xlsx"
+                    blobDownloadExcelFile(res, fileName);
+                })
+            },
+            handleFilter() {
+                this.listQuery.pageNum = 1
+                this.getList()
+            },
+            handleModifyStatus(row, status) {
+                this.$message({
+                    message: '操作成功',
+                    type: 'success'
+                })
+                row.status = status
+            },
+
+            sortChange(sortData) {
+                console.log("sortData:", sortData);
+                //组装排序字段
+                let newProp = toLine(sortData.prop);
+                let newOrder;
+                if (sortData.order.includes("desc")) {
+                    newOrder = "desc";
+                } else {
+                    newOrder = "asc";
+                }
+                this.listQuery.orderBy = newProp + "-" + newOrder;
+                //查询
+                this.listQuery.pageNum = 1
+                this.getList()
+                // this.getData();
+
+            },
+            // sortChange(data) {
+            //     const {prop, order} = data
+            //     if (prop === 'id') {
+            //         this.sortByID(order)
+            //     }
+            // },
+            sortByID(order) {
+                if (order === 'ascending') {
+                    this.listQuery.sort = '+id'
+                } else {
+                    this.listQuery.sort = '-id'
+                }
+                this.handleFilter()
+            },
+            resetTemp() {
+                this.temp = {
+                    id: undefined,
+                    importance: 1,
+                    remark: '',
+                    timestamp: new Date(),
+                    title: '',
+                    status: 'published',
+                    type: ''
+                }
+            },
+            handleCreate() {
+                this.resetTemp()
+                this.dialogStatus = 'create'
+                this.dialogFormVisible = true
+                this.$nextTick(() => {
+                    this.$refs['dataForm'].clearValidate()
+                })
+            },
+            createData() {
+                this.$refs['dataForm'].validate((valid) => {
+                    if (valid) {
+                        this.temp.id = parseInt(Math.random() * 100) + 1024 // mock a id
+                        this.temp.author = 'vue-element-admin'
+                        createArticle(this.temp).then(() => {
+                            this.list.unshift(this.temp)
+                            this.dialogFormVisible = false
+                            this.$notify({
+                                title: '成功',
+                                message: '创建成功',
+                                type: 'success',
+                                duration: 2000
+                            })
+                        })
+                    }
+                })
+            },
+            handleUpdate(row) {
+                this.temp = Object.assign({}, row) // copy obj
+                this.temp.timestamp = new Date(this.temp.timestamp)
+                this.dialogStatus = 'update'
+                this.dialogFormVisible = true
+                this.$nextTick(() => {
+                    this.$refs['dataForm'].clearValidate()
+                })
+            },
+            updateData() {
+                this.$refs['dataForm'].validate((valid) => {
+                    if (valid) {
+                        const tempData = Object.assign({}, this.temp)
+                        tempData.timestamp = +new Date(tempData.timestamp) // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
+                        updateArticle(tempData).then(() => {
+                            for (const v of this.list) {
+                                if (v.id === this.temp.id) {
+                                    const index = this.list.indexOf(v)
+                                    this.list.splice(index, 1, this.temp)
+                                    break
+                                }
+                            }
+                            this.dialogFormVisible = false
+                            this.$notify({
+                                title: '成功',
+                                message: '更新成功',
+                                type: 'success',
+                                duration: 2000
+                            })
+                        })
+                    }
+                })
+            },
+            handleDelete(row) {
+                this.$notify({
+                    title: '成功',
+                    message: '删除成功',
+                    type: 'success',
+                    duration: 2000
+                })
+                const index = this.list.indexOf(row)
+                this.list.splice(index, 1)
+            },
+            handleFetchPv(pv) {
+                fetchPv(pv).then(response => {
+                    this.pvData = response.data.pvData
+                    this.dialogPvVisible = true
+                })
+            },
+            handleDownload() {
+                this.downloadLoading = true
+                import('@/vendor/Export2Excel').then(excel => {
+                    const tHeader = ['timestamp', 'title', 'type', 'importance', 'status']
+                    const filterVal = ['timestamp', 'title', 'type', 'importance', 'status']
+                    const data = this.formatJson(filterVal, this.list)
+                    excel.export_json_to_excel({
+                        header: tHeader,
+                        data,
+                        filename: 'table-list'
+                    })
+                    this.downloadLoading = false
+                })
+            },
+            formatJson(filterVal, jsonData) {
+                return jsonData.map(v => filterVal.map(j => {
+                    if (j === 'timestamp') {
+                        return parseTime(v[j])
+                    } else {
+                        return v[j]
+                    }
+                }))
+            }
+        }
+    }
+</script>
